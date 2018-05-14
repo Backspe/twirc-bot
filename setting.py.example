@@ -1,0 +1,20 @@
+
+
+class AuthKey:
+    def __init__(self, consumer_key, consumer_secret, access_token, access_token_secret):
+        self.consumer_key = consumer_key
+        self.consumer_secret = consumer_secret
+        self.access_token = access_token
+        self.access_token_secret = access_token_secret
+
+screen_name = "twitter_id"
+irc_name = "irc_nick!~user_name@"
+
+# from https://apps.twitter.com/
+twitterkey = AuthKey(
+consumer_key="",
+consumer_secret="",
+access_token="",
+access_token_secret="")
+
+chan_list = [('#channel_name', 'channel_password')]
