@@ -10,12 +10,12 @@ from datetime import datetime, timedelta
 from connector.ircmessage import IRCMessage
 
 
-key = setting.backspekey
+key = setting.twitterkey
 auth = tweepy.OAuthHandler(key.consumer_key, key.consumer_secret)
 auth.set_access_token(key.access_token, key.access_token_secret)
 api = tweepy.API(auth)
-screen_name = "Backspe"
-irc_name = "Backspe!~bschoe@"
+screen_name = setting.screen_name
+irc_name = setting.irc_name
 f = open("log.txt", 'a')
 
 tweetqueue = Queue()
