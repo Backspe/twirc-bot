@@ -6,6 +6,7 @@ import setting
 import threading
 from queue import Queue
 import time
+import re
 from datetime import datetime, timedelta
 from connector.ircmessage import IRCMessage
 
@@ -16,16 +17,18 @@ auth.set_access_token(key.access_token, key.access_token_secret)
 api = tweepy.API(auth)
 screen_name = setting.screen_name
 irc_name = setting.irc_name
-f = open("log.txt", 'a')
 
-tweetqueue = Queue()
+
 
 class ircBot(threading.Thread):
     irc = None
     msgQueue = Queue()
     last_id = ''
+    prog = re.compile(r'(\bhttps?://twitter.com/[a-zA-Z0-9_/]+/(\d+)\b)')
+    log = open("log.txt", 'a')
 
     def __init__(self):
+        self.log.write('log start at '+str(datetime.now())+'\n')
         super(ircBot, self).__init__()
 
     def run(self):
@@ -36,7 +39,9 @@ class ircBot(threading.Thread):
             self.irc.joinchan(' '.join(c).strip())
         while True:
             packet = self.msgQueue.get()
-            if packet['type'] == 'irc':
+            if packet['type'] == 'msg':
+                pass
+            elif packet['type'] == 'irc':
                 message = packet['content']
                 if message.msgType == 'INVITE':
                     self.irc.joinchan(message.channel)
@@ -49,6 +54,9 @@ class ircBot(threading.Thread):
                             tweet_url = "https://twitter.com/" + screen_name + "/status/" + stat.id_str
                             self.irc.sendmsg(message.channel, tweet_url)
                             self.last_id = stat.id_str
+                            self.log.write(message.msg+'\n')
+                            self.log.write(tweet_url+'\n')
+                            print('send tweet:', tweet_url)
                         elif message.msg.find('!연속 ') == 0:
                             content = message.msg[4:]
                             stat = tweet(content=content, reply_id=self.last_id)
@@ -56,10 +64,23 @@ class ircBot(threading.Thread):
                             tweet_url = "https://twitter.com/" + screen_name + "/status/" + stat.id_str
                             self.irc.sendmsg(message.channel, tweet_url)
                             self.last_id = stat.id_str
-
-                        
-            elif packet['type'] == 'msg':
-                pass
+                            self.log.write(message.msg+'\n')
+                            self.log.write(tweet_url+'\n')
+                            print('send tweet:', tweet_url)
+                        else:
+                            tweet_urls = self.prog.findall(message.msg)
+                            for tweet_url, tweet_id in tweet_urls:
+                                try:
+                                    stat = api.get_status(tweet_id)
+                                    tweet_string = stat.user.name + "(@" + stat.user.screen_name + "): " + stat.text
+                                    tweet_string = tweet_string.replace('\n', '\\n')
+                                    self.irc.sendmsg(message.channel, tweet_string)
+                                    self.log.write(tweet_string+'\n')
+                                    print('get tweet:', tweet_string)
+                                except Exception as e:
+                                    self.irc.sendmsg(message.channel, "URL ERROR")
+                                    print('URL ERROR:', e)
+                                    
 
 def tweet(content="", reply_id = ""):
     stat = None
@@ -77,9 +98,5 @@ def tweet(content="", reply_id = ""):
     return stat
 
 if __name__ == '__main__':
-    f.write('log start at '+str(datetime.now())+'\n')
-    
-    tweet(content=' '.join(sys.argv[1:]))
-
     bot = ircBot()
     bot.start()
