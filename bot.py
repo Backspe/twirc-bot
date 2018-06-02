@@ -57,6 +57,7 @@ class ircBot(threading.Thread):
                             self.log.write(message.msg+'\n')
                             self.log.write(tweet_url+'\n')
                             print('send tweet:', tweet_url)
+                            continue
                         elif message.msg.find('!연속 ') == 0:
                             content = message.msg[4:]
                             stat = tweet(content=content, reply_id=self.last_id)
@@ -67,19 +68,20 @@ class ircBot(threading.Thread):
                             self.log.write(message.msg+'\n')
                             self.log.write(tweet_url+'\n')
                             print('send tweet:', tweet_url)
-                        else:
-                            tweet_urls = self.prog.findall(message.msg)
-                            for tweet_url, tweet_id in tweet_urls:
-                                try:
-                                    stat = api.get_status(tweet_id)
-                                    tweet_string = stat.user.name + "(@" + stat.user.screen_name + "): " + stat.text
-                                    tweet_string = tweet_string.replace('\n', '\\n')
-                                    self.irc.sendmsg(message.channel, tweet_string)
-                                    self.log.write(tweet_string+'\n')
-                                    print('get tweet:', tweet_string)
-                                except Exception as e:
-                                    self.irc.sendmsg(message.channel, "URL ERROR")
-                                    print('URL ERROR:', e)
+                            continue
+
+                    tweet_urls = self.prog.findall(message.msg)
+                    for tweet_url, tweet_id in tweet_urls:
+                        try:
+                            stat = api.get_status(tweet_id)
+                            tweet_string = stat.user.name + "(@" + stat.user.screen_name + "): " + stat.text
+                            tweet_string = tweet_string.replace('\n', '\\n')
+                            self.irc.sendmsg(message.channel, tweet_string)
+                            self.log.write(tweet_string+'\n')
+                            print('get tweet:', tweet_string)
+                        except Exception as e:
+                            self.irc.sendmsg(message.channel, "URL ERROR")
+                            print('URL ERROR:', e)
                                     
 
 def tweet(content="", reply_id = ""):
