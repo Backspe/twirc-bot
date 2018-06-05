@@ -24,6 +24,7 @@ class ircBot(threading.Thread):
     irc = None
     msgQueue = Queue()
     last_id = ''
+    footer = ''
     prog = re.compile(r'(\bhttps?://twitter.com/[a-zA-Z0-9_/]+/(\d+)\b)')
     log = open("log.txt", 'a')
 
@@ -48,7 +49,7 @@ class ircBot(threading.Thread):
                 elif message.msgType == 'PRIVMSG':
                     if message.sender.find(irc_name) == 0:
                         if message.msg.find('!트윗 ') == 0:
-                            content = message.msg[4:]
+                            content = message.msg[4:] + self.footer
                             stat = tweet(content=content)
                             if stat == None: continue
                             tweet_url = "https://twitter.com/" + screen_name + "/status/" + stat.id_str
@@ -59,7 +60,7 @@ class ircBot(threading.Thread):
                             print('send tweet:', tweet_url)
                             continue
                         elif message.msg.find('!연속 ') == 0:
-                            content = message.msg[4:]
+                            content = message.msg[4:] + self.footer
                             stat = tweet(content=content, reply_id=self.last_id)
                             if stat == None: continue
                             tweet_url = "https://twitter.com/" + screen_name + "/status/" + stat.id_str
@@ -69,6 +70,16 @@ class ircBot(threading.Thread):
                             self.log.write(tweet_url+'\n')
                             print('send tweet:', tweet_url)
                             continue
+                        elif message.msg.find('!연속잇기 ') == 0:
+                            content = message.msg[len('!연속잇기 '):]
+                            self.last_id = content
+                            self.irc.sendmsg(message.channel, content)
+                            print('connect change:', content)
+                        elif message.msg.find('!꼬릿말 ') == 0:
+                            content = message.msg[len('!꼬릿말 '):]
+                            self.footer = content
+                            self.irc.sendmsg(message.channel, "꼬릿말 변경: '" + content + "'")
+                            print('footer change:', content)
 
                     tweet_urls = self.prog.findall(message.msg)
                     for tweet_url, tweet_id in tweet_urls:
