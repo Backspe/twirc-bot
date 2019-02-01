@@ -25,7 +25,7 @@ class ircBot(threading.Thread):
     msgQueue = Queue()
     last_id = ''
     footer = ''
-    prog = re.compile(r'(\bhttps?://twitter.com/[a-zA-Z0-9_/]+/(\d+)\b)')
+    prog = re.compile(r'(\bhttps?://(www.|mobile.)?twitter.com/[a-zA-Z0-9_/]+/(\d+)\b)')
     log = open("log.txt", 'a')
 
     def __init__(self):
@@ -82,7 +82,8 @@ class ircBot(threading.Thread):
                             print('footer change:', content)
 
                     tweet_urls = self.prog.findall(message.msg)
-                    for tweet_url, tweet_id in tweet_urls:
+                    print(tweet_urls)
+                    for tweet_url, _, tweet_id in tweet_urls:
                         try:
                             stat = api.get_status(tweet_id)
                             tweet_string = stat.user.name + "(@" + stat.user.screen_name + "): " + stat.text
